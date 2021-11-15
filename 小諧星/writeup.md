@@ -1,0 +1,110 @@
+# 小諧星
+
+| Info | Value |
+| :--- | :-----: |
+| Categories | #☆☆☆☆☆ #CRYPTO |
+| Score | 50 |
+| Total Solve (Rate) | 88/240 (36.7%) |
+
+## Description
+> 早知不可獲勝
+> 擠出喜感做諧星
+> 無力當 你們崇尚的精英
+> 有幸獻醜的 小丑 都不失敬
+
+In the beginning of 2020, Khaled A. Nagaty invented a cryptosystem based on key exchange. The cipher is faster than ever... It is impossible to break, right?
+
+To solve this challenge, you need to read the source code `chall.py`. Try to get those questions answered:
+
+- Can `shared_key` generated from `y_A` and `y_B`?
+- If so, how do we calculate `m` from `c` and `shared_key`?
+- How can we convert the number `m` into a flag that is in the format `hkcert21{...}`?
+
+_(Updated hint at 13/11 18:56)_
+
+This is a key exchange scheme, where two entity (Alice and Bob) use the "cryptosystem" to exchange a shared key (i.e. after the process, they can generate the same key). After the key exchange, they can then use the shared key to encrypt / decrypt any message.
+
+Thus, to decrypt the ciphertext back to plaintext (i.e. the flag), you will have to know the shared key, then use the "cryptosystem" to decrypt the ciphertext.
+
+Can you get the shared key from the provided information? You have `p`, `y_A` and `y_B`, can you generate the shared key?
+
+From the `exchange` function, `self.shared_key = S_AB`, and `S_AB = (y_AB * y_B) * S_A % self.p`; `y_AB = y_A * y_B`.
+
+You have `p`, `y_A` and `y_B`, what are you missing? What is the relation between `S_A` and `y_A` and how can we use that?
+
+_(Updated hint at 14/11 00:25)_
+
+We are given `output.txt` that contains `y_A` and `y_B`, which are the public keys for Alice and Bob respectively. In this challenge, you need to derive the shared key `S_AB` from those public keys.
+
+Look at the below line:
+
+```python
+y_AB = y_A * y_B
+S_AB = (y_AB * y_B) * S_A % self.p
+```
+
+From above, we can compute the shared key `S_AB` from `y_A`, `y_B` and `S_A`. However, the challenge is so "secure" that we don't even need any private keys. That said we can compute `S_AB` solely from `y_A` and `y_B`. How? Look at the relationship between `S_A` and `y_A`. In short, `S_AB = (y_A * y_B * y_B) * y_A % p = (y_A * y_B)^2 % p`.
+
+One question is, how do we convert base 16 (those strings starting with `0x`) to base 10? We can use [Cyberchef](https://gchq.github.io/CyberChef/#recipe=From_Base(10)To_Base(16)) to convert numbers. You can also find a product of two large numbers with Cyberchef. There is one question remain: What does `%` mean? Try to find it yourself!
+
+Now we have the shared key `S_AB` (it is called `sk` below). If we have the ciphertext `c`, we can look the decrypt function shows how they decrypt:
+
+```python
+def decrypt(self, c):
+    sk = self.shared_key
+    if sk is None: raise Exception('Key exchange is not completed')
+
+    return c // sk
+```
+
+Okay, it is now a simple division. Now it is a primary-level math (actually not). Now you have a message represented as a number, you can convert the number here with [Cyberchef](https://gchq.github.io/CyberChef/#recipe=From_Base(10)To_Base(16)From_Hex('Auto')) again. Now put down the number for the flag!
+
+_(Updated hint at 14/11 02:45)_
+
+If you are getting something like `0x686B636572743231`, that is `hkcert21` in HEX. Find a HEX decoder online to grab your flag!
+
+### Attachents
+the-little-comedian_58178adf8b732db76116f5bb7e0c4198.zip
+
+## School Solves
+| Overall Order | School Order | Name | Solved at |
+| :-: | :-: | :-: | :-: |
+| 88 | 1 |  S0092 - Immaculate Heart of Mary College | 2021-11-14 17:16:08.865 |
+| - | - |  S0090 - Immaculate Heart of Mary College | Unsolved |
+| - | - | S0091 - Immaculate Heart of Mary College | Unsolved |
+| - | - | S0096 - Immaculate Heart of Mary College | Unsolved |
+
+Total: 1/4 (25%)
+
+## Writeup
+As I solved it when all hints are revealed, it is relatively easy to me. First of I opened `output.txt` and convert all the hexadecimal number to decimal numbers, which gives me the below:
+```
+p = 131779217781108025516715321269390561059868812077752012613505018486929111809034362981708749894127119362588982394639631111967722871973629511816617719691754562919429251261868699115355600442628001337083599159340381969349623415179534700131305209644621121609616718188147956138590418597195723287323215150704741774149
+y_a = 111219057464627363326042853198087242969505342931959168021844138983551788218242087331733760051153647984635394719571574479941429104921550615962101252378408495170179113663390875711695237903116835852583029553734143834290909185314422238002826430608477264641960933522178517321863172239303694507311118619099158151418
+y_b = 115993866377144764455321277064567789459356429535387462742525435102394408148494512957091181882996561609309055256254083956737335083230708831634651729878487751639351849354053696723047067903983007544873350224507548537076021626156586055130639890303978660755445487165366330271097065435110239736475447411882242540935
+c = 573440688604372829031041206866266421148413096553829206875060992170593379471171296072541240745387420139790007729078287963596031658286982193321918848000718780752521563007942290298630845282070195317773224868654971523910904270831224730085739031413921003662045364490530962239156862670225038888200386916609020082311343606893112063485849690181202597296356400928815423115149040849587145832984223435625002174374022116638434835834672653031984073233
+```
+I calculated `S_AB = (y_A * y_B * y_B) * y_A % p = (y_A * y_B)^2 % p` by CyberChef, then mod (`%`) it via an easy python code:
+```py
+a = 166428795576412350745363871075002769184462972271549188605384079377997207482621821580475304429593441569964961244416939071438132307040420401479486983845997342041579087465145770171408019645494380601152114247745563355385105906577931349359268232218827614152411626772318356927607989166087244441038650622105587905370505869768889544324959887356687440336413974494121475383773567686307484130266025653388085149223610168233541920771064676698015362587745523932227101190785526825257515426433379466459235056824524154390962792950990292388589415990246288281780204156065707361042007518570287554362702840737833626480571181413283104999511648273503148064176070818365373757004731439432305599588714960948772724934682718293345038303404903979567427074492525726644541664257549589807458748111198582565463424353463426971496244900268197200999604957774167132329945293879029843177979183542730066560844052980842096330049080865479258535572118691861856778147457024047392176942571445763456420154286458356790308300138557783857375364126023451345148449558535759155247511184892338660946124546047115296981206939416248483835264858453758617868238686135338624539550306477505120377994665383969158722594366556259940749831667834138414980884793554053910622196471243347053895388900
+p = 131779217781108025516715321269390561059868812077752012613505018486929111809034362981708749894127119362588982394639631111967722871973629511816617719691754562919429251261868699115355600442628001337083599159340381969349623415179534700131305209644621121609616718188147956138590418597195723287323215150704741774149
+x = a%p
+print(x)
+```
+Hence we get x (`S_AB`):
+```
+x = 126761916018763105932511840700610734800905222407142215212111827562741645356412614872775223519500627260742733659033215231685645222862249135933100272982626279583819624399810846875619514023930157109037997654173002704409424841729007728904943912290729329796962780464517480579493201352078520412759337770034347885349
+```
+Looking at the decrypt function, we know flag = `c // sk`, which I divided it via CyberChef and returned me the following:
+```
+4523761604546061064835227995641494724805647148717034826488368819369074735492790637562577009837994612155159643277227684354017422717
+```
+Convert it back to hexadecimal, we got:
+```
+686b6365727432317b746831735f69355f776834745f77335f63346c6c33645f736e346b336f316c5f63727970743073793574336d7d
+```
+Converting that to ASCII, we got the flag.
+
+
+## Flag
+`hkcert21{th1s_i5_wh4t_w3_c4ll3d_sn4k3o1l_crypt0sy5t3m}`
